@@ -12,7 +12,7 @@
     <!-- MAP -->
     <div
       id="map"
-      class="w-full h-[700px] rounded-2xl bg-gray-200 flex items-center justify-center"
+      class="w-full h-[400px] rounded-2xl bg-gray-200 flex items-center justify-center"
     >
       <span v-if="loadingMap" class="text-gray-500">
         Memuat peta...
