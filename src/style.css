@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-100 text-gray-800;
+}
+
+/* Card reusable */
+.card {
+  @apply bg-white rounded-2xl shadow-sm p-4;
+}
+
+/* Button */
+.btn {
+  @apply px-4 py-2 rounded-xl font-medium transition-all duration-200;
+}
+
+/* PRIMARY */
+.btn-primary {
+  @apply bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md;
+}
+.btn-primary:hover {
+  @apply scale-105 shadow-lg;
+}
+
+/* SUCCESS */
+.btn-success {
+  @apply bg-gradient-to-r from-green-600 to-green-500 text-white shadow-md;
+}
+.btn-success:hover {
+  @apply scale-105 shadow-lg;
+}
+
+/* SECONDARY */
+.btn-secondary {
+  @apply bg-white border border-gray-300 text-gray-700 shadow-sm;
+}
+.btn-secondary:hover {
+  @apply bg-gray-100 scale-105;
+}
+
+/* DISABLED */
+.btn-disabled {
+  @apply bg-gray-300 text-gray-500 cursor-not-allowed;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
