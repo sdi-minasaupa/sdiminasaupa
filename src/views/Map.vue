@@ -7,7 +7,7 @@
     </div>
 
     <!-- MAP -->
-    <div id="map" class="h-[400px] rounded-2xl"></div>
+    <div id="map" class="h-[500px] rounded-2xl"></div>
 
     <!-- MODAL -->
     <div
