@@ -110,26 +110,28 @@ async function handleLogin() {
     const res = await login(id, nisn.value);
 
     if (res.data.success) {
-      // simpan session
+      toast("Login berhasil", "success");
+
+      // ✅ SIMPAN SESSION
       sessionStorage.setItem(
         "user",
         JSON.stringify({
-          id,
-          nama,
+          id: id,
+          nama: nama,
           nisn: nisn.value,
         }),
       );
 
-      toast("Login berhasil", "success");
-
-      router.push("/map");
+      setTimeout(() => {
+        router.push("/map");
+      }, 800);
     } else {
       toast("NISN salah", "error");
     }
-  } catch (err) {
+  } catch {
     toast("Gagal koneksi server", "error");
-  } finally {
-    loading.value = false;
   }
+
+  loading.value = false;
 }
 </script>

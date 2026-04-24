@@ -2,12 +2,12 @@
   <div class="relative">
     <!-- Header -->
     <div class="mb-2">
-      <h2 class="font-bold">{{ route.query.nama }}</h2>
+      <h2 class="font-bold">{{ user?.nama }}</h2>
       <p class="text-sm text-gray-500">Tentukan lokasi rumah (OSM)</p>
     </div>
 
     <!-- MAP -->
-    <div ref="mapEl" class="h-[500px] rounded-2xl"></div>
+    <div ref="mapEl" class="h-[500px] w-full rounded-2xl"></div>
 
     <!-- MODAL -->
     <div
@@ -77,15 +77,18 @@
 
 <script setup>
 import { ref, onMounted, nextTick, inject } from "vue";
-import { useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import { saveLocation } from "../api/api";
-
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 const toast = inject("toast");
-const route = useRoute();
+const router = useRouter();
 
+// 🔒 SESSION
+const user = JSON.parse(sessionStorage.getItem("user"));
+
+// STATE
 const showModal = ref(false);
 const loading = ref(false);
 
@@ -97,7 +100,7 @@ const mapEl = ref(null);
 let map;
 let marker;
 
-// 🔧 FIX ICON (WAJIB)
+// 🔧 FIX ICON
 delete L.Icon.Default.prototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
@@ -107,9 +110,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+// ======================
 // INIT MAP
+// ======================
 onMounted(async () => {
+  if (!user) {
+    router.push("/");
+    return;
+  }
+
   await nextTick();
+
+  if (!mapEl.value) {
+    console.error("Map element tidak ada");
+    return;
+  }
 
   map = L.map(mapEl.value).setView([-5.1477, 119.4327], 13);
 
@@ -117,13 +132,14 @@ onMounted(async () => {
     attribution: "© OpenStreetMap",
   }).addTo(map);
 
-  // klik map
   map.on("click", (e) => {
     setMarker(e.latlng.lat, e.latlng.lng);
   });
 });
 
+// ======================
 // SET MARKER
+// ======================
 function setMarker(la, ln) {
   lat.value = la;
   lng.value = ln;
@@ -134,7 +150,9 @@ function setMarker(la, ln) {
   map.setView([la, ln], 15);
 }
 
+// ======================
 // GPS
+// ======================
 function getLocation() {
   if (!navigator.geolocation) {
     toast("GPS tidak didukung", "error");
@@ -144,7 +162,7 @@ function getLocation() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       setMarker(pos.coords.latitude, pos.coords.longitude);
-      toast("Lokasi berhasil dideteksi", "success");
+      toast("Lokasi ditemukan", "success");
     },
     () => {
       toast("Izinkan akses lokasi", "error");
@@ -152,11 +170,11 @@ function getLocation() {
   );
 }
 
+// ======================
 // MODAL
+// ======================
 function openModal() {
-  console.log("CLICK SIMPAN", lat.value, lng.value);
-
-  if (!lat.value) {
+  if (lat.value === null || lng.value === null) {
     toast("Pilih lokasi dulu", "warning");
     return;
   }
@@ -164,29 +182,50 @@ function openModal() {
   showModal.value = true;
 }
 
+// ======================
 // SUBMIT
+// ======================
 async function confirmSubmit() {
+  if (!user || !user.id || !user.nisn) {
+    toast("Session tidak valid", "error");
+    router.replace("/");
+    return;
+  }
+
+  if (lat.value === null || lng.value === null) {
+    toast("Pilih lokasi dulu", "warning");
+    return;
+  }
+
   loading.value = true;
 
   try {
     const res = await saveLocation({
-      id: route.query.id,
-      nama: route.query.nama,
-      nisn: route.query.nisn,
+      id: user.id,
+      nama: user.nama,
+      nisn: user.nisn,
       lat: lat.value,
       lng: lng.value,
     });
 
-    if (res.data.success) {
+    console.log("RESPONSE:", res.data); // debug
+
+    // 🔥 pastikan benar-benar sukses
+    if (res?.data?.success) {
       toast("Lokasi berhasil disimpan", "success");
 
+      sessionStorage.removeItem("user");
+
+      showModal.value = false;
+
       setTimeout(() => {
-        location.href = "/";
-      }, 1000);
+        router.replace("/");
+      }, 800);
     } else {
-      toast(res.data.message, "error");
+      toast(res?.data?.message || "Gagal menyimpan", "error");
     }
-  } catch {
+  } catch (err) {
+    console.error(err);
     toast("Gagal koneksi server", "error");
   }
 
