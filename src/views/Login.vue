@@ -110,14 +110,19 @@ async function handleLogin() {
     const res = await login(id, nisn.value);
 
     if (res.data.success) {
+      // simpan session
+      sessionStorage.setItem(
+        "user",
+        JSON.stringify({
+          id,
+          nama,
+          nisn: nisn.value,
+        }),
+      );
+
       toast("Login berhasil", "success");
 
-      setTimeout(() => {
-        router.push({
-          path: "/map",
-          query: { id, nama, nisn: nisn.value },
-        });
-      }, 800);
+      router.push("/map");
     } else {
       toast("NISN salah", "error");
     }

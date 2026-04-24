@@ -11,7 +11,7 @@
 
     <!-- MAP -->
     <div
-      id="map"
+      ref="mapEl"
       class="w-full h-[500px] rounded-2xl bg-gray-200 flex items-center justify-center"
     >
       <span v-if="loadingMap" class="text-gray-500">
@@ -34,31 +34,35 @@ import { onMounted, ref, inject, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { getLocation } from "../api/api";
 
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
 const route = useRoute();
 const toast = inject("toast");
 
 const data = ref({});
 const loadingMap = ref(true);
 
+const mapEl = ref(null);
+
 let map;
 let marker;
 
-// 🔧 LOAD GOOGLE MAPS (AMAN)
-function waitGoogleMaps() {
-  return new Promise((resolve) => {
-    if (window.google && window.google.maps) {
-      resolve();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google && window.google.maps) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 100);
-    }
-  });
-}
+// 🔧 FIX ICON (WAJIB BIAR MARKER MUNCUL)
+delete L.Icon.Default.prototype._getIconUrl;
 
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+// =====================
+// INIT
+// =====================
 onMounted(async () => {
   try {
     const res = await getLocation(route.query.id);
@@ -70,10 +74,7 @@ onMounted(async () => {
 
     data.value = res.data.data;
 
-    // tunggu DOM & Google Maps siap
     await nextTick();
-    await waitGoogleMaps();
-
     initMap();
 
   } catch (err) {
@@ -82,34 +83,44 @@ onMounted(async () => {
   }
 });
 
-// 🔧 INIT MAP
+// =====================
+// INIT MAP (LEAFLET)
+// =====================
 function initMap() {
   const lat = parseFloat(data.value.lat);
   const lng = parseFloat(data.value.lng);
 
-  if (!lat || !lng) {
+  // validasi koordinat
+  if (isNaN(lat) || isNaN(lng)) {
     toast("Koordinat tidak valid", "error");
     return;
   }
 
-  const position = { lat, lng };
+  map = L.map(mapEl.value).setView([lat, lng], 15);
 
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: position,
-    zoom: 15
-  });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap",
+  }).addTo(map);
 
-  marker = new google.maps.Marker({
-    position,
-    map,
-    title: data.value.nama
-  });
+  marker = L.marker([lat, lng])
+    .addTo(map)
+    .bindPopup(`<b>${data.value.nama}</b><br>Lokasi rumah`)
+    .openPopup();
 
   loadingMap.value = false;
 }
 
+// =====================
 // FORMAT TANGGAL
+// =====================
 function formatDate(date) {
   return new Date(date).toLocaleString();
 }
 </script>
+
+<style>
+/* Fix layering kalau ada konflik */
+.leaflet-container {
+  z-index: 0;
+}
+</style>

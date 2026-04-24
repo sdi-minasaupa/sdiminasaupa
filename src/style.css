@@ -54,3 +54,6 @@ body {
   opacity: 0;
   transform: translateY(-10px);
 }
+.leaflet-container {
+  z-index: 0 !important;
+}

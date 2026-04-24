@@ -12,7 +12,23 @@ const routes = [
   { path: "/map-view", component: MapView}
 ];
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes
 });
+
+// 🔒 ROUTE GUARD
+router.beforeEach((to) => {
+  const user = sessionStorage.getItem("user");
+
+  if (to.path === "/map" && !user) {
+    return "/";
+  }
+});
+
+export default router;
+
+// export default createRouter({
+//   history: createWebHistory(),
+//   routes
+// });
