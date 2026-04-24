@@ -92,15 +92,30 @@ const toast = inject("toast");
 const route = useRoute();
 const router = useRouter();
 
-const id = route.params.id;
-const nama = route.params.nama;
-
 const nisn = ref("");
 const loading = ref(false);
 
+// 🔒 VALIDASI PARAM
+const id = route.params.id;
+const nama = route.params.nama;
+
+if (!id || !nama) {
+  toast("Akses tidak valid", "error");
+  router.replace("/");
+}
+
+// 🔑 LOGIN
 async function handleLogin() {
+  if (loading.value) return;
+
   if (!nisn.value) {
     toast("NISN wajib diisi", "warning");
+    return;
+  }
+
+  // VALIDASI FORMAT
+  if (!/^\d{5,15}$/.test(nisn.value)) {
+    toast("Format NISN tidak valid", "warning");
     return;
   }
 
@@ -109,29 +124,31 @@ async function handleLogin() {
   try {
     const res = await login(id, nisn.value);
 
-    if (res.data.success) {
+    if (res?.data?.success === true) {
       toast("Login berhasil", "success");
 
-      // ✅ SIMPAN SESSION
+      // 💾 SIMPAN SESSION
       sessionStorage.setItem(
         "user",
         JSON.stringify({
-          id: id,
-          nama: nama,
+          id,
+          nama,
           nisn: nisn.value,
         }),
       );
 
+      // 🔄 REDIRECT
       setTimeout(() => {
-        router.push("/map");
+        router.replace("/map");
       }, 800);
     } else {
       toast("NISN salah", "error");
     }
-  } catch {
+  } catch (err) {
+    console.error(err);
     toast("Gagal koneksi server", "error");
+  } finally {
+    loading.value = false;
   }
-
-  loading.value = false;
 }
 </script>
